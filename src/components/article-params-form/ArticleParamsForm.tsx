@@ -1,6 +1,6 @@
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 import { RadioGroup } from 'src/ui/radio-group';
 import { Text } from 'src/ui/text';
@@ -17,13 +17,14 @@ import {
 } from 'src/constants/articleProps';
 
 import styles from './ArticleParamsForm.module.scss';
-type articleParamsFormProps = {
+type ArticleParamsFormProps = {
 	onApply: (state: typeof defaultArticleState) => void;
 };
 
-export const ArticleParamsForm = ({ onApply }: articleParamsFormProps) => {
-	const [isOpen, setIsOpen] = useState(false);
+export const ArticleParamsForm = ({ onApply }: ArticleParamsFormProps) => {
+	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [formState, setState] = useState(defaultArticleState);
+	const sideBar = useRef<HTMLElement>(null);
 
 	const handleSubmit = (e: React.FormEvent): void => {
 		e.preventDefault();
@@ -35,11 +36,43 @@ export const ArticleParamsForm = ({ onApply }: articleParamsFormProps) => {
 		setState(defaultArticleState);
 	};
 
+	useEffect(() => {
+		if (!isFormOpen) {
+			return;
+		}
+
+		const handleClick = (event: MouseEvent) => {
+			if (sideBar.current && !sideBar.current.contains(event.target as Node)) {
+				setIsFormOpen(false);
+			}
+		};
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				setIsFormOpen(false);
+			}
+		};
+
+		window.addEventListener('mousedown', handleClick);
+		window.addEventListener('keydown', handleKeyDown);
+
+		return () => {
+			window.removeEventListener('mousedown', handleClick);
+			window.removeEventListener('keydown', handleKeyDown);
+		};
+	}, [isFormOpen]);
+
 	return (
 		<>
-			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
+			<ArrowButton
+				isOpen={isFormOpen}
+				onClick={() => setIsFormOpen(!isFormOpen)}
+			/>
 			<aside
-				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+				className={clsx(styles.container, {
+					[styles.container_open]: isFormOpen,
+				})}
+				ref={sideBar}>
 				<form
 					className={styles.form}
 					onSubmit={handleSubmit}
